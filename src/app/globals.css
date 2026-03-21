@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* ─── Color Palette (from image.png) ─── */
+  --color-primary: #074f5e;
+  --color-primary-container: #2b6777;
+  --color-primary-light: #52ab98;
+  --color-surface: #f9f9f9;
+  --color-surface-container: #eeeeee;
+  --color-surface-container-low: #f3f3f3;
+  --color-surface-container-high: #e8e8e8;
+  --color-surface-container-highest: #e2e2e2;
+  --color-surface-container-lowest: #ffffff;
+  --color-secondary: #51606b;
+  --color-secondary-container: #d2e2ee;
+  --color-tertiary: #005245;
+  --color-tertiary-container: #006c5c;
+  --color-tertiary-fixed: #9af3de;
+  --color-outline: #70787c;
+  --color-outline-variant: #bfc8cb;
+  --color-on-surface: #1a1c1c;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #aae3f6;
+  --color-on-tertiary-fixed-variant: #005144;
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  /* ─── Font Families ─── */
+  --font-headline: "Geist Mono", ui-monospace, monospace;
+  --font-body: "Geist Mono", ui-monospace, monospace;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+/* ─── Base ─── */
+body {
+  font-family: var(--font-body);
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+}
+
+/* ─── Material Symbols ─── */
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+/* ─── Gradient CTA ─── */
+.linear-shift-primary {
+  background: linear-gradient(15deg, #074f5e 0%, #2b6777 100%);
+}
+
+/* ─── Ghost hover border ─── */
+.ghost-border:hover {
+  outline: 1px solid rgba(191, 200, 203, 0.15);
+}
+
+/* ─── Pulse keyframes for live indicator ─── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
