@@ -6,6 +6,11 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 
+app.use((req, res, next) => {
+    console.log(`[RADAR] Ada tamu mengetuk pintu: ${req.method} ${req.url}`);
+    next();
+});
+
 const PORT = process.env.PORT || 4000;
 
 // Stage 3: Agent's Eyes (Data Reader)
@@ -27,17 +32,42 @@ async function fetchGitDiff(projectId, mrIid) {
     return { diffText, description: res.data.description };
 }
 
-// Stage 4: Agent's Brain (AI Evaluator)
-async function evaluateCode(diffText, description) {
-    const prompt = `You are a strict and ruthless AI evaluator for a Web3 Hackathon.
-You will evaluate the following code changes and determine a quality score from 0-100.
-ABSOLUTE RULE: You MUST respond ONLY in raw, pure JSON format. ABSOLUTELY NO markdown, no backticks, no conversational text.
+// Stage 3.5: Fetch Repository Context (README.md)
+async function fetchRepoReadme(projectId) {
+    try {
+        // Mengambil README dari default branch (main/master)
+        const url = `https://gitlab.com/api/v4/projects/${projectId}/repository/files/README.md/raw?ref=main`;
+        const res = await axios.get(url, {
+            headers: { 'PRIVATE-TOKEN': process.env.GITLAB_ACCESS_TOKEN }
+        });
+        return res.data; // Teks mentah README
+    } catch (e) {
+        console.log("README.md tidak ditemukan atau gagal ditarik.");
+        return "Tidak ada deskripsi proyek yang tersedia.";
+    }
+}
 
+// Stage 4: Agent's Brain (AI Evaluator)
+async function evaluateCode(diffText, description, readmeText) {
+    const prompt = `You are a context-aware Autonomous AI Reviewer.
+Your job is to read the project's README to understand its core purpose, and then evaluate the proposed Merge Request (code diff) based on how relevant and useful it is to that purpose.
+
+Project Context (README.md):
+"""
+${readmeText}
+"""
+
+Task:
+1. Analyze the Project Context to understand what this project does.
+2. Evaluate the Code Diff. Does it add value to the core purpose? Is the code quality good?
+3. Determine a score from 0-100. (Give low scores if the code is irrelevant to the README, e.g., adding a python calculator to a web3 project).
+
+ABSOLUTE RULE: You MUST respond ONLY in raw, pure JSON format.
 Required JSON structure:
 {
   "score": <number 0-100>,
-  "wallet_address": "<extract exact Ethereum wallet address from description, or null if not found>",
-  "reasoning": "<short string explaining why you gave this score>"
+  "wallet_address": "<extract exact EVM wallet from description, or null>",
+  "reasoning": "<short explanation linking the code changes to the project's goals>"
 }
 
 Merge Request Description:
@@ -79,12 +109,16 @@ async function sendBounty(walletAddress) {
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
     
     // Minimal ABI for external interaction
-    const abi = ["function payBounty(address payable recipient) public"];
+    const abi = ["function payBounty(address payable recipient) public payable"];
     const contract = new ethers.Contract(process.env.BOUNTY_CONTRACT_ADDRESS, abi, wallet);
     
-    console.log(`Executing payBounty sequence to ${walletAddress}...`);
-    // Assuming Arbitrum Sepolia
-    const tx = await contract.payBounty(walletAddress);
+    // Mengambil nominal dari brankas .env (default: 0.001 ETH jika kosong)
+    const amount = ethers.parseEther(process.env.BOUNTY_AMOUNT || "0.001");
+
+    console.log(`Executing payBounty sequence to ${walletAddress} with amount ${ethers.formatEther(amount)} ETH...`);
+
+    // Menyuntikkan value ETH ke dalam pemanggilan kontrak
+    const tx = await contract.payBounty(walletAddress, { value: amount });
     const receipt = await tx.wait();
     return receipt.hash;
 }
@@ -117,13 +151,23 @@ async function postGitLabComment(projectId, mrIid, result, txHash) {
 
 // Stage 2: Agent's Ears (Trigger)
 app.post('/webhook/gitlab', async (req, res) => {
-    // Security Validation Function
-    const gitlabToken = req.headers['x-gitlab-token'];
-    
-    if (gitlabToken !== process.env.GITLAB_WEBHOOK_SECRET) {
-        console.log("Unauthorized request attempted.");
+    // 1. TANGKAP HEADER (EXPRESS MENGGUNAKAN HURUF KECIL!)
+    const gitlabToken = req.headers['x-gitlab-token']; 
+    const localSecret = process.env.GITLAB_WEBHOOK_SECRET;
+
+    // 2. DIAGNOSTIK MILITER (HARUS DI ATAS SEGALA LOGIKA LAIN)
+    console.log("=== DIAGNOSTIK OTENTIKASI ===");
+    console.log("Token dari GitLab  :", gitlabToken);
+    console.log("Token dari Lokal   :", localSecret);
+    console.log("=============================");
+
+    // 3. VALIDASI KETAT
+    if (gitlabToken !== localSecret) {
+        console.log("[DITOLAK] Token tidak cocok!");
         return res.status(401).send('Unauthorized');
     }
+
+    console.log("[DITERIMA] Token cocok. Memproses muatan...");
 
     const { object_kind, object_attributes, project } = req.body;
     
@@ -148,8 +192,11 @@ app.post('/webhook/gitlab', async (req, res) => {
         console.log("Fetching Git Diff...");
         const { diffText, description } = await fetchGitDiff(projectId, mrIid);
         
+        console.log("Fetching Repository Context (README)...");
+        const readmeText = await fetchRepoReadme(projectId);
+        
         console.log("Evaluating via DeepSeek AI...");
-        const aiResult = await evaluateCode(diffText, description);
+        const aiResult = await evaluateCode(diffText, description, readmeText);
         console.log(`AI Evaluation Complete. Score: ${aiResult.score}`);
         
         let txHash = null;
@@ -175,6 +222,22 @@ app.post('/webhook/gitlab', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`MergiFi Agent listening on port ${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[SUKSES] MergiFi Agent aktif di port ${PORT}`);
+    console.log(`[STATUS] Menunggu kiriman webhook dari GitLab...`);
+});
+
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`[ERROR] Port ${PORT} sudah digunakan oleh aplikasi lain!`);
+    } else {
+        console.error(`[ERROR] Terjadi kesalahan fatal pada server:`, err.message);
+    }
+    process.exit(1);
+});
+
+// Menangani penutupan paksa (Ctrl+C) agar log tetap rapi
+process.on('SIGINT', () => {
+    console.log("\n[STOP] Mematikan mesin agen... Sampai jumpa!");
+    server.close(() => process.exit(0));
 });
