@@ -21,6 +21,7 @@ contract Bounty {
         uint256 amount = 0.0001 ether; 
         
         require(address(this).balance >= amount, "Insufficient funds for this bounty");
-        recipient.transfer(amount);
+        (bool success, ) = recipient.call{value: amount}("");
+        require(success, "Failed to send bounty");
     }
 }
