@@ -7,7 +7,7 @@ const app = express();
 app.use(express.json());
 
 app.use((req, res, next) => {
-    console.log(`[RADAR] Ada tamu mengetuk pintu: ${req.method} ${req.url}`);
+    console.log(`[RADAR] Incoming request: ${req.method} ${req.url}`);
     next();
 });
 
@@ -35,15 +35,15 @@ async function fetchGitDiff(projectId, mrIid) {
 // Stage 3.5: Fetch Repository Context (README.md)
 async function fetchRepoReadme(projectId) {
     try {
-        // Mengambil README dari default branch (main/master)
+        // Fetch README from default branch (main/master)
         const url = `https://gitlab.com/api/v4/projects/${projectId}/repository/files/README.md/raw?ref=main`;
         const res = await axios.get(url, {
             headers: { 'PRIVATE-TOKEN': process.env.GITLAB_ACCESS_TOKEN }
         });
-        return res.data; // Teks mentah README
+        return res.data; // Raw README text
     } catch (e) {
-        console.log("README.md tidak ditemukan atau gagal ditarik.");
-        return "Tidak ada deskripsi proyek yang tersedia.";
+        console.log("README.md not found or failed to fetch.");
+        return "No project description available.";
     }
 }
 
@@ -60,7 +60,7 @@ ${readmeText}
 Task:
 1. Analyze the Project Context to understand what this project does.
 2. Evaluate the Code Diff. Does it add value to the core purpose? Is the code quality good?
-3. Determine a score from 0-100. (Give low scores if the code is irrelevant to the README, e.g., adding a python calculator to a web3 project).
+3. Determine a score from 0-100. Give a high score (>80) ONLY if the code is structurally sound and directly fulfills the core purpose described in the README. Give a low score if the code is irrelevant, trivial, or malicious.
 
 ABSOLUTE RULE: You MUST respond ONLY in raw, pure JSON format.
 Required JSON structure:
@@ -108,17 +108,16 @@ async function sendBounty(walletAddress) {
     const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
     
-    // Minimal ABI for external interaction
-    const abi = ["function payBounty(address payable recipient) public payable"];
+    // ABI SYNCED: Removed 'payable' as the contract doesn't accept it here
+    const abi = ["function payBounty(address recipient) public"];
+    
+    // Ensure this contract address is the one you JUST deployed
     const contract = new ethers.Contract(process.env.BOUNTY_CONTRACT_ADDRESS, abi, wallet);
     
-    // Mengambil nominal dari brankas .env (default: 0.001 ETH jika kosong)
-    const amount = ethers.parseEther(process.env.BOUNTY_AMOUNT || "0.001");
+    console.log(`Executing payBounty sequence to ${walletAddress}...`);
 
-    console.log(`Executing payBounty sequence to ${walletAddress} with amount ${ethers.formatEther(amount)} ETH...`);
-
-    // Menyuntikkan value ETH ke dalam pemanggilan kontrak
-    const tx = await contract.payBounty(walletAddress, { value: amount });
+    // CLEAN EXECUTION: Removed { value: amount } as contract pays from its own balance
+    const tx = await contract.payBounty(walletAddress);
     const receipt = await tx.wait();
     return receipt.hash;
 }
@@ -151,23 +150,23 @@ async function postGitLabComment(projectId, mrIid, result, txHash) {
 
 // Stage 2: Agent's Ears (Trigger)
 app.post('/webhook/gitlab', async (req, res) => {
-    // 1. TANGKAP HEADER (EXPRESS MENGGUNAKAN HURUF KECIL!)
+    // 1. CAPTURE HEADERS (EXPRESS USES LOWERCASE!)
     const gitlabToken = req.headers['x-gitlab-token']; 
     const localSecret = process.env.GITLAB_WEBHOOK_SECRET;
 
-    // 2. DIAGNOSTIK MILITER (HARUS DI ATAS SEGALA LOGIKA LAIN)
-    console.log("=== DIAGNOSTIK OTENTIKASI ===");
-    console.log("Token dari GitLab  :", gitlabToken);
-    console.log("Token dari Lokal   :", localSecret);
+    // 2. MILITARY DIAGNOSTICS (MUST BE ABOVE ALL OTHER LOGIC)
+    console.log("=== AUTHENTICATION DIAGNOSTICS ===");
+    console.log("GitLab Token  :", gitlabToken);
+    console.log("Local Token   :", localSecret);
     console.log("=============================");
 
-    // 3. VALIDASI KETAT
+    // 3. STRICT VALIDATION
     if (gitlabToken !== localSecret) {
-        console.log("[DITOLAK] Token tidak cocok!");
+        console.log("[REJECTED] Token mismatch!");
         return res.status(401).send('Unauthorized');
     }
 
-    console.log("[DITERIMA] Token cocok. Memproses muatan...");
+    console.log("[ACCEPTED] Token match. Processing payload...");
 
     const { object_kind, object_attributes, project } = req.body;
     
@@ -223,21 +222,21 @@ app.post('/webhook/gitlab', async (req, res) => {
 });
 
 const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[SUKSES] MergiFi Agent aktif di port ${PORT}`);
-    console.log(`[STATUS] Menunggu kiriman webhook dari GitLab...`);
+    console.log(`[SUCCESS] MergiFi Agent active on port ${PORT}`);
+    console.log(`[STATUS] Waiting for GitLab webhooks...`);
 });
 
 server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-        console.error(`[ERROR] Port ${PORT} sudah digunakan oleh aplikasi lain!`);
+        console.error(`[ERROR] Port ${PORT} is already in use by another application!`);
     } else {
-        console.error(`[ERROR] Terjadi kesalahan fatal pada server:`, err.message);
+        console.error(`[ERROR] Fatal server error:`, err.message);
     }
     process.exit(1);
 });
 
-// Menangani penutupan paksa (Ctrl+C) agar log tetap rapi
+// Handle graceful shutdown (Ctrl+C)
 process.on('SIGINT', () => {
-    console.log("\n[STOP] Mematikan mesin agen... Sampai jumpa!");
+    console.log("\n[STOP] Shutting down agent... Goodbye!");
     server.close(() => process.exit(0));
 });
