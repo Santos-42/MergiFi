@@ -1,7 +1,30 @@
 const express = require('express');
 const axios = require('axios');
 const ethers = require('ethers');
+const { createClient } = require("@libsql/client");
 require('dotenv').config();
+
+const turso = createClient({
+  url: process.env.TURSO_DATABASE_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
+
+// Inisialisasi Tabel secara Otonom jika belum ada
+async function initDB() {
+    await turso.execute(`
+        CREATE TABLE IF NOT EXISTS ledger (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            mr_id INTEGER,
+            date TEXT,
+            score INTEGER,
+            wallet TEXT,
+            tx_hash TEXT,
+            status TEXT
+        )
+    `);
+    console.log("[DATABASE] Turso DB Ready.");
+}
+initDB();
 
 const app = express();
 app.use(express.json());
@@ -9,6 +32,11 @@ app.use(express.json());
 app.use((req, res, next) => {
     console.log(`[RADAR] Incoming request: ${req.method} ${req.url}`);
     next();
+});
+
+// Endpoint untuk menipu sistem auto-sleep Render
+app.get('/ping', (req, res) => {
+    res.status(200).send("Agent is awake and breathing.");
 });
 
 const PORT = process.env.PORT || 4000;
@@ -148,6 +176,19 @@ async function postGitLabComment(projectId, mrIid, result, txHash) {
     }
 }
 
+// Stage: Open Ledger Logger
+async function logToLedger(mrId, score, wallet, txHash) {
+    try {
+        await turso.execute({
+            sql: `INSERT INTO ledger (mr_id, date, score, wallet, tx_hash, status) VALUES (?, ?, ?, ?, ?, ?)`,
+            args: [mrId, new Date().toISOString(), score, wallet, txHash, "PAID ✅"]
+        });
+        console.log("[LEDGER] Transaksi sukses diukir di Turso Database.");
+    } catch (error) {
+        console.error("[FATAL] Gagal menulis ke Turso:", error);
+    }
+}
+
 // Stage 2: Agent's Ears (Trigger)
 app.post('/webhook/gitlab', async (req, res) => {
     // 1. CAPTURE HEADERS (EXPRESS USES LOWERCASE!)
@@ -205,6 +246,7 @@ app.post('/webhook/gitlab', async (req, res) => {
                 // Only send bouncy if > 80 score
                 txHash = await sendBounty(aiResult.wallet_address);
                 console.log("Bounty Sent! Tx Hash:", txHash);
+                logToLedger(mrIid, aiResult.score, aiResult.wallet_address, txHash);
             } else {
                 console.log("AI Score > 80, but no valid wallet address found in description. Failed safe.");
                 aiResult.reasoning += " (Wallet address invalid or missing)";

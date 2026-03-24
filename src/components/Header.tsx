@@ -6,35 +6,23 @@ export default function Header() {
       <div className="flex items-center gap-2">
         <Link
           href="/"
-          className="text-xl font-bold tracking-tighter text-primary"
+          className="text-xl font-bold tracking-tighter text-primary hover:opacity-80 transition-opacity"
         >
           MergiFi
         </Link>
       </div>
 
       <nav className="hidden md:flex items-center gap-8 text-sm tracking-tight">
+
         <Link
-          href="/"
-          className="text-slate-500 hover:text-primary-container transition-colors duration-200"
+          href="/public-ledger"
+          className="text-slate-500 hover:text-primary hover:bg-primary/10 px-4 py-2 rounded-md transition-all duration-200 font-medium"
         >
-          Guide
-        </Link>
-        <Link
-          href="#"
-          className="text-slate-500 hover:text-primary-container transition-colors duration-200"
-        >
-          Docs
+          Public Ledger
         </Link>
       </nav>
 
-      <div className="flex items-center gap-4">
-        <Link
-          href="/login"
-          className="px-5 py-2 linear-shift-primary text-white text-xs font-bold uppercase tracking-widest transition-transform active:scale-95"
-        >
-          Login Admin
-        </Link>
-      </div>
+
     </header>
   );
 }

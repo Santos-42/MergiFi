@@ -54,7 +54,7 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-            <div className="md:col-span-4 p-8 bg-primary text-on-primary flex flex-col justify-between min-h-[200px]">
+            <div className="md:col-span-4 p-8 bg-primary text-on-primary flex flex-col justify-between min-h-[200px] hover:bg-primary-container transition-colors cursor-pointer group">
               <span className="text-4xl material-symbols-outlined">
                 terminal
               </span>
@@ -82,7 +82,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {/* Card 1 */}
-            <div className="group flex flex-col gap-6 bg-surface p-8 ghost-border transition-all duration-300">
+            <div className="group flex flex-col gap-6 bg-surface p-8 ghost-border transition-all duration-300 hover:-translate-y-2 hover:shadow-xl cursor-pointer">
               <div className="flex justify-between items-start">
                 <span className="text-5xl font-black text-surface-container-highest">
                   01
@@ -103,7 +103,7 @@ export default function LandingPage() {
             </div>
 
             {/* Card 2 */}
-            <div className="group flex flex-col gap-6 bg-surface p-8 ghost-border transition-all duration-300">
+            <div className="group flex flex-col gap-6 bg-surface p-8 ghost-border transition-all duration-300 hover:-translate-y-2 hover:shadow-xl cursor-pointer">
               <div className="flex justify-between items-start">
                 <span className="text-5xl font-black text-surface-container-highest">
                   02
@@ -124,7 +124,7 @@ export default function LandingPage() {
             </div>
 
             {/* Card 3 */}
-            <div className="group flex flex-col gap-6 bg-surface p-8 ghost-border transition-all duration-300">
+            <div className="group flex flex-col gap-6 bg-surface p-8 ghost-border transition-all duration-300 hover:-translate-y-2 hover:shadow-xl cursor-pointer">
               <div className="flex justify-between items-start">
                 <span className="text-5xl font-black text-surface-container-highest">
                   03
@@ -162,7 +162,7 @@ export default function LandingPage() {
                 automatic agent-level disqualification.
               </p>
               <div className="pt-8">
-                <button className="border border-primary px-8 py-3 text-primary text-xs font-bold uppercase tracking-widest hover:bg-primary hover:text-white transition-colors cursor-pointer">
+                <button className="border border-primary px-8 py-3 text-primary text-xs font-bold uppercase tracking-widest hover:bg-primary hover:text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer">
                   Read Full Terms
                 </button>
               </div>
@@ -228,7 +228,7 @@ export default function LandingPage() {
               placeholder="DEveloper@Gitlab.com"
               type="email"
             />
-            <button className="bg-primary-light text-white px-8 py-4 text-xs font-black uppercase tracking-widest cursor-pointer hover:bg-tertiary transition-colors">
+            <button className="bg-primary-light text-white px-8 py-4 text-xs font-black uppercase tracking-widest cursor-pointer hover:bg-tertiary hover:shadow-lg hover:-translate-y-1 active:scale-95 transition-all duration-200">
               Subscribe
             </button>
           </div>
