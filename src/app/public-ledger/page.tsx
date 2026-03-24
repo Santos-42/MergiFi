@@ -45,11 +45,15 @@ export default function PublicLedger() {
     return () => clearInterval(pollingInterval);
   }, []);
 
+  const totalEvaluated = transactions.length;
+  const disbursedCount = transactions.filter(tx => tx.score >= 80).length;
+  const passRate = totalEvaluated > 0 ? Math.round((disbursedCount / totalEvaluated) * 100) : 0;
+
   return (
     <>
       <Header />
       
-      <main className="max-w-7xl mx-auto px-6 py-24 flex-1 w-full min-h-[70vh]">
+      <main className="max-w-7xl mx-auto px-6 pt-12 pb-24 flex-1 w-full min-h-[70vh]">
         <div className="mb-16">
           <Link href="/" className="text-primary-light hover:text-primary transition-colors flex items-center gap-2 text-sm font-bold uppercase tracking-widest mb-8 w-fit group">
             <span className="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_left_alt</span>
@@ -61,9 +65,26 @@ export default function PublicLedger() {
           <h1 className="text-5xl font-bold text-primary tracking-tighter mb-4">
             Open Ledger
           </h1>
-          <p className="text-lg text-secondary max-w-2xl leading-relaxed">
+          <p className="text-lg text-secondary max-w-2xl leading-relaxed mb-8">
             Real-time transparency dashboard for MergiFi autonomous payouts. Every merged PR and AI evaluation is permanently recorded.
           </p>
+
+          {!loading && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-surface-container-low border border-outline-variant/20 p-6 flex flex-col items-center justify-center text-center">
+                <span className="text-xs uppercase tracking-widest text-secondary font-bold mb-2">Total Evaluated MRs</span>
+                <span className="text-4xl font-black text-primary">{totalEvaluated}</span>
+              </div>
+              <div className="bg-surface-container-low border border-outline-variant/20 p-6 flex flex-col items-center justify-center text-center">
+                <span className="text-xs uppercase tracking-widest text-secondary font-bold mb-2">Disbursed Bounties</span>
+                <span className="text-4xl font-black text-primary">{disbursedCount}</span>
+              </div>
+              <div className="bg-surface-container-low border border-outline-variant/20 p-6 flex flex-col items-center justify-center text-center">
+                <span className="text-xs uppercase tracking-widest text-secondary font-bold mb-2">AI Pass Rate</span>
+                <span className="text-4xl font-black text-primary">{passRate}%</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="bg-surface-container-lowest border border-outline-variant/20 p-1">
