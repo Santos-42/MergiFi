@@ -22,6 +22,16 @@ async function initDB() {
             created_at TEXT
         )
     `);
+    
+    // PATCH DARURAT: Paksa tambahkan kolom jika belum ada
+    try {
+        await turso.execute(`ALTER TABLE ledger ADD COLUMN created_at TEXT`);
+        console.log("[DATABASE] Column created_at forcefully added.");
+    } catch (e) {
+        // Abaikan error jika kolom ternyata sudah ada
+        console.log("[DATABASE] Column created_at already exists.");
+    }
+
     console.log("[DATABASE] Turso DB Ready.");
 }
 initDB();
