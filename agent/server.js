@@ -9,17 +9,17 @@ const turso = createClient({
   authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
-// Inisialisasi Tabel secara Otonom jika belum ada
+// Stage: Autonomous DB Initialization
 async function initDB() {
     await turso.execute(`
         CREATE TABLE IF NOT EXISTS ledger (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             mr_id INTEGER,
-            date TEXT,
             score INTEGER,
             wallet TEXT,
             tx_hash TEXT,
-            status TEXT
+            status TEXT,
+            created_at TEXT
         )
     `);
     console.log("[DATABASE] Turso DB Ready.");
@@ -132,7 +132,7 @@ ${diffText}
 }
 
 // Stage 5: Financial Muscle (Web3 Executor)
-async function sendBounty(walletAddress) {
+async function executeBountyPayout(walletAddress) {
     const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
     
@@ -146,8 +146,8 @@ async function sendBounty(walletAddress) {
 
     // CLEAN EXECUTION: Removed { value: amount } as contract pays from its own balance
     const tx = await contract.payBounty(walletAddress);
-    const receipt = await tx.wait();
-    return receipt.hash;
+    await tx.wait(); // Wait for confirmation
+    return tx; // Return tx object which has .hash
 }
 
 // Stage 6: Agent's Mouth (Audit Trail Reporter)
@@ -157,9 +157,9 @@ async function postGitLabComment(projectId, mrIid, result, txHash) {
     message += `**AI Score:** ${result.score}/100\n`;
     message += `**Reasoning:** ${result.reasoning}\n`;
     
-    if (result.score > 80 && txHash) {
+    if (result.score >= 80 && txHash !== "N/A") {
         message += `**Status:** PASSED \u2705\n`;
-        message += `**Bounty Disbursed!** [Arbitrum Sepolia TxHash: ${txHash}](https://sepolia.arbiscan.io/tx/${txHash})\n`;
+        message += `**Bounty Disbursed!** [Base Sepolia TxHash: ${txHash}](https://sepolia.basescan.org/tx/${txHash})\n`;
     } else {
         message += `**Status:** FAILED \u274c\n`;
         message += `Failed to meet the >= 80 score threshold, or missing/invalid EVM wallet address.\n`;
@@ -177,15 +177,18 @@ async function postGitLabComment(projectId, mrIid, result, txHash) {
 }
 
 // Stage: Open Ledger Logger
-async function logToLedger(mrId, score, wallet, txHash) {
+async function logToLedger(mrId, score, wallet, txHash, status) {
+    const createdAt = new Date().toISOString(); 
+    console.log(`Recording evaluation to Open Ledger at ${createdAt}...`);
+
     try {
         await turso.execute({
-            sql: `INSERT INTO ledger (mr_id, date, score, wallet, tx_hash, status) VALUES (?, ?, ?, ?, ?, ?)`,
-            args: [mrId, new Date().toISOString(), score, wallet, txHash, "PAID ✅"]
+            sql: `INSERT INTO ledger (mr_id, score, wallet, tx_hash, status, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+            args: [mrId, score, wallet, txHash, status, createdAt]
         });
-        console.log("[LEDGER] Transaksi sukses diukir di Turso Database.");
+        console.log(`[LEDGER] Evaluation recorded for MR #${mrId} with status: ${status}`);
     } catch (error) {
-        console.error("[FATAL] Gagal menulis ke Turso:", error);
+        console.error("[FATAL] Failed to write to Turso:", error);
     }
 }
 
@@ -239,21 +242,27 @@ app.post('/webhook/gitlab', async (req, res) => {
         const aiResult = await evaluateCode(diffText, description, readmeText);
         console.log(`AI Evaluation Complete. Score: ${aiResult.score}`);
         
-        let txHash = null;
-        if (aiResult.score > 80) {
+        let txHash = "N/A";
+        let status = "REJECTED";
+
+        if (aiResult.score >= 80) {
             if (aiResult.wallet_address) {
-                console.log(`Proceeding to Web3 Execution for wallet: ${aiResult.wallet_address}`);
-                // Only send bouncy if > 80 score
-                txHash = await sendBounty(aiResult.wallet_address);
-                console.log("Bounty Sent! Tx Hash:", txHash);
-                logToLedger(mrIid, aiResult.score, aiResult.wallet_address, txHash);
+                console.log("Proceeding to Web3 Execution...");
+                const tx = await executeBountyPayout(aiResult.wallet_address);
+                txHash = tx.hash;
+                status = "PAID";
+                console.log(`Bounty Sent! Tx Hash: ${txHash}`);
             } else {
-                console.log("AI Score > 80, but no valid wallet address found in description. Failed safe.");
-                aiResult.reasoning += " (Wallet address invalid or missing)";
+                console.log("Score >= 80, but no valid wallet address found. Bounty rejected.");
+                aiResult.reasoning += " (Missing/invalid wallet address)";
             }
         } else {
-            console.log("Bounty conditions not met. Discarding transaction.");
+            console.log("Score below 80. Bounty rejected.");
         }
+
+        // SIMPAN KE DATABASE APAPUN HASILNYA (Lulus atau Gagal)
+        console.log("Recording evaluation to Open Ledger (Turso)...");
+        await logToLedger(mrIid, aiResult.score, aiResult.wallet_address || "N/A", txHash, status);
         
         console.log("Posting Audit Trail Comment...");
         await postGitLabComment(projectId, mrIid, aiResult, txHash);
