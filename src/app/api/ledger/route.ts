@@ -8,12 +8,12 @@ export async function GET() {
             authToken: process.env.TURSO_AUTH_TOKEN as string,
         });
 
-        // Tarik data, urutkan dari yang terbaru
+        // Fetch data, ordered by newest first
         const result = await turso.execute("SELECT * FROM ledger ORDER BY id DESC");
         
         return NextResponse.json(result.rows);
     } catch (error) {
         console.error(error);
-        return NextResponse.json({ error: "Gagal menarik data dari Turso" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to fetch data from Turso" }, { status: 500 });
     }
 }

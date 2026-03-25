@@ -49,23 +49,27 @@ export default function LandingPage() {
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="p-8 bg-white/10 backdrop-blur-xl border border-white/20">
                   <span className="text-white text-4xl font-black italic tracking-widest">
-                    AGENT_01
+                    AI_AGENT
                   </span>
                 </div>
               </div>
             </div>
-            <div className="md:col-span-4 p-8 bg-primary text-on-primary flex flex-col justify-between min-h-[200px] hover:bg-primary-container transition-colors cursor-pointer group">
+            <a 
+              href="https://gitlab.com/Santos-42/test-bounty-repo" 
+              target="_blank" 
+              className="md:col-span-4 p-8 bg-primary text-on-primary flex flex-col justify-between min-h-[200px] hover:bg-primary-container transition-colors cursor-pointer group no-underline"
+            >
               <span className="text-4xl material-symbols-outlined">
-                terminal
+                open_in_new
               </span>
               <div>
-                <h3 className="text-xl font-bold mb-4">Start Contributing</h3>
+                <h3 className="text-xl font-bold mb-4">View Open Bounties</h3>
                 <p className="text-sm opacity-80 leading-relaxed font-[var(--font-mono)]">
-                  Connect your GitLab account and start solving issues to earn
-                  instant payouts in $USDC.
+                  Explore active issues on our GitLab repository and start contributing to earn
+                  instant payouts in ETH.
                 </p>
               </div>
-            </div>
+            </a>
           </div>
         </section>
 
@@ -161,11 +165,6 @@ export default function LandingPage() {
                 the MergiFi Structural Guidelines. Non-compliance results in
                 automatic agent-level disqualification.
               </p>
-              <div className="pt-8">
-                <button className="border border-primary px-8 py-3 text-primary text-xs font-bold uppercase tracking-widest hover:bg-primary hover:text-white hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer">
-                  Read Full Terms
-                </button>
-              </div>
             </div>
           </div>
 
@@ -174,13 +173,13 @@ export default function LandingPage() {
               {[
                 {
                   num: "/01",
-                  title: "No Plagiarism",
-                  desc: "Agent scans all repositories for direct logic duplication.",
+                  title: "No Plagiarism (PLANNED)",
+                  desc: "Agent will scan repositories for direct logic duplication using AST analysis.",
                 },
                 {
                   num: "/02",
-                  title: "Test Requirement",
-                  desc: "MRs without 80%+ unit test coverage are automatically rejected.",
+                  title: "Test Requirement (PLANNED)",
+                  desc: "Automatic verification of 80%+ unit test coverage via CI/CD integration.",
                 },
                 {
                   num: "/03",
@@ -190,7 +189,7 @@ export default function LandingPage() {
                 {
                   num: "/04",
                   title: "Wallet Verification",
-                  desc: "EVM or Solana wallet must be linked via GitLab profile bio.",
+                  desc: "Include your EVM wallet address in the Merge Request description.",
                 },
               ].map((rule) => (
                 <div key={rule.num} className="flex gap-6 items-start">

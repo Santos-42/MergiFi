@@ -13,7 +13,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MergiFi — GitLab Web3 Bounty Agent",
+  title: "MergiFi",
   description:
     "Autonomous SDLC agent that evaluates Merge Requests and distributes bounties via smart contracts on Base Sepolia.",
 };

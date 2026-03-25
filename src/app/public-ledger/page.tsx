@@ -20,28 +20,28 @@ export default function PublicLedger() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fungsi untuk menarik data
+    // Function to fetch ledger data
     const fetchLedger = () => {
       fetch('/api/ledger')
         .then(res => res.json())
         .then(data => {
-          // Hanya update state jika ada data, menghindari kedipan layar
+          // Only update state if data exists to avoid layout flicker
           if (data && !data.error) {
             setTransactions(data);
           }
           setLoading(false);
         })
-        .catch(err => console.error("Gagal sinkronisasi buku kas", err));
+        .catch(err => console.error("Failed to sync ledger data", err));
     };
 
-    // Tarik data pertama kali saat halaman dimuat
+    // Fetch data for the first time on mount
     fetchLedger();
 
     // RAHASIA DEMO SEAMLESS: 
-    // Tarik data secara senyap setiap 2 detik di latar belakang
+    // Silent polling every 2 seconds in the background
     const pollingInterval = setInterval(fetchLedger, 2000);
 
-    // Bersihkan interval jika komponen ditutup agar tidak bocor memori
+    // Cleanup interval on unmount to prevent memory leaks
     return () => clearInterval(pollingInterval);
   }, []);
 
@@ -62,12 +62,22 @@ export default function PublicLedger() {
           <h2 className="text-xs uppercase tracking-[0.4em] font-black text-outline mb-4">
             Transparency
           </h2>
-          <h1 className="text-5xl font-bold text-primary tracking-tighter mb-4">
-            Open Ledger
-          </h1>
-          <p className="text-lg text-secondary max-w-2xl leading-relaxed mb-8">
-            Real-time transparency dashboard for MergiFi autonomous payouts. Every merged PR and AI evaluation is permanently recorded.
-          </p>
+          
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6 mb-10">
+            <div>
+              <h1 className="text-5xl font-bold text-primary tracking-tighter mb-4">
+                Open Ledger
+              </h1>
+              <p className="text-lg text-secondary max-w-2xl leading-relaxed">
+                Real-time transparency dashboard for MergiFi autonomous payouts. Every merged PR and AI evaluation is permanently recorded.
+              </p>
+            </div>
+
+            <a href="https://gitlab.com/Santos-42/test-bounty-repo" target="_blank" rel="noopener noreferrer" className="bg-primary text-on-primary hover:bg-primary-light transition-colors px-6 py-3 rounded-full font-bold flex items-center gap-2 w-fit shrink-0">
+              <span className="material-symbols-outlined text-xl">account_tree</span>
+              Test Bounty Repo
+            </a>
+          </div>
 
           {!loading && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -103,7 +113,7 @@ export default function PublicLedger() {
               <tbody className="divide-y divide-surface-container-high font-[var(--font-mono)] text-sm">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-secondary animate-pulse">
+                    <td colSpan={6} className="px-6  py-12 text-center text-secondary animate-pulse">
                       Syncing with Agent...
                     </td>
                   </tr>

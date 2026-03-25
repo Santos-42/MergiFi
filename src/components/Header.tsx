@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Header() {
   return (
@@ -6,8 +7,9 @@ export default function Header() {
       <div className="flex items-center gap-2">
         <Link
           href="/"
-          className="text-xl font-bold tracking-tighter text-primary hover:opacity-80 transition-opacity"
+          className="flex items-center gap-3 text-2xl font-bold tracking-tighter text-primary hover:opacity-80 transition-opacity"
         >
+          <Image src="/logo.jpg" alt="MergiFi Logo" width={48} height={48} className="rounded-lg object-cover" />
           MergiFi
         </Link>
       </div>
