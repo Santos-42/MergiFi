@@ -27,9 +27,9 @@
   --color-on-error-container: #93000a;
 
   /* ─── Font Families ─── */
-  --font-headline: "Geist Mono", ui-monospace, monospace;
-  --font-body: "Geist Mono", ui-monospace, monospace;
-  --font-mono: "JetBrains Mono", monospace;
+  --font-headline: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
 /* ─── Base ─── */

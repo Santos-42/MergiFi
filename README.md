@@ -81,7 +81,7 @@ The application includes an ultra-minimalist read-only control panel for Admins:
 - **Landing Page:** Static guide explaining how the system works and contributor rules.
 - **Public Ledger:** Displays key metrics (Total Evaluated MRs, Disbursed Bounties, AI Pass Rate) and a live transaction log table.
 
-**Tech Stack:** Next.js + Tailwind CSS. Typography strictly uses `Geist Mono` or `JetBrains Mono`.
+**Tech Stack:** Next.js + Tailwind CSS. Typography uses **Space Grotesk** (Headings) and **Inter** (Body), with **JetBrains Mono** for technical elements.
 
 ## Getting Started
 
